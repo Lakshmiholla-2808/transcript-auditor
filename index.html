@@ -3,41 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>AI Transcript Auditor - Ollama</title>
+<title>Transcript Audit with Ollama</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
-    * {
-        box-sizing: border-box;
-    }
-
     body {
+        font-family: Arial, sans-serif;
         margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
         background: #f4f6f8;
-        color: #202124;
+        color: #222;
     }
 
     header {
-        background: #17365d;
+        background: #1f3c5b;
         color: white;
-        padding: 24px 35px;
+        padding: 22px;
     }
 
     header h1 {
-        margin: 0;
-        font-size: 27px;
+        margin: 0 0 6px 0;
+        font-size: 25px;
     }
 
     header p {
-        margin: 7px 0 0;
+        margin: 0;
         opacity: 0.9;
     }
 
     .container {
-        max-width: 1400px;
+        max-width: 1250px;
         margin: 25px auto;
         padding: 0 20px;
     }
@@ -45,180 +40,139 @@
     .card {
         background: white;
         border-radius: 10px;
-        padding: 22px;
+        padding: 20px;
         margin-bottom: 20px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
-    h2 {
-        margin-top: 0;
-        color: #17365d;
-        font-size: 20px;
-    }
-
     .grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 18px;
-    }
-
-    .field {
-        display: flex;
-        flex-direction: column;
-        gap: 7px;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
     }
 
     label {
+        display: block;
         font-weight: bold;
-        font-size: 14px;
+        margin-bottom: 6px;
     }
 
-    input,
-    textarea,
-    select {
+    input, select, button {
         width: 100%;
-        padding: 11px;
-        border: 1px solid #c9cdd2;
+        box-sizing: border-box;
+        padding: 10px;
         border-radius: 6px;
+        border: 1px solid #bbb;
         font-size: 14px;
-        background: white;
-    }
-
-    textarea {
-        min-height: 110px;
-        resize: vertical;
-    }
-
-    input[type="file"] {
-        padding: 9px;
-    }
-
-    .buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 20px;
     }
 
     button {
-        border: none;
-        border-radius: 6px;
-        padding: 11px 18px;
         cursor: pointer;
+        border: none;
+        background: #1f3c5b;
+        color: white;
         font-weight: bold;
-        font-size: 14px;
     }
 
-    .primary {
-        background: #17365d;
-        color: white;
+    button:hover {
+        opacity: 0.9;
     }
 
-    .secondary {
-        background: #e8edf3;
-        color: #17365d;
+    button.secondary {
+        background: #666;
     }
 
-    .success {
-        background: #287a3e;
-        color: white;
+    button.success {
+        background: #287d3c;
     }
 
-    .danger {
-        background: #b42318;
-        color: white;
+    button.warning {
+        background: #b36b00;
     }
 
-    button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+    .button-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+
+    .button-row button {
+        width: auto;
+        min-width: 150px;
     }
 
     #status {
         padding: 12px;
         border-radius: 6px;
         margin-top: 15px;
-        background: #eef3f8;
-        color: #17365d;
+        display: none;
         white-space: pre-wrap;
     }
 
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 12px;
-        margin-bottom: 20px;
+    .status-info {
+        background: #e8f1fa;
+        color: #174a73;
     }
 
-    .stat {
-        background: white;
-        border-radius: 8px;
-        padding: 16px;
-        text-align: center;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    .status-success {
+        background: #e8f5e9;
+        color: #256029;
     }
 
-    .stat-number {
-        font-size: 25px;
-        font-weight: bold;
-        color: #17365d;
+    .status-error {
+        background: #fdecea;
+        color: #a12622;
     }
 
-    .stat-label {
-        font-size: 12px;
-        color: #666;
-        margin-top: 5px;
+    .progress {
+        margin-top: 15px;
+        display: none;
     }
 
-    .table-wrapper {
-        overflow-x: auto;
+    .progress-bar {
+        width: 100%;
+        height: 20px;
+        background: #ddd;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #1f3c5b;
+        transition: width 0.3s;
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 1300px;
+        margin-top: 15px;
+        font-size: 13px;
+    }
+
+    th, td {
+        border: 1px solid #ddd;
+        padding: 9px;
+        vertical-align: top;
+        text-align: left;
     }
 
     th {
-        background: #17365d;
-        color: white;
-        padding: 10px;
-        text-align: left;
-        font-size: 13px;
-        position: sticky;
-        top: 0;
+        background: #eef2f5;
     }
 
-    td {
-        border-bottom: 1px solid #ddd;
-        padding: 10px;
-        vertical-align: top;
-        font-size: 13px;
-        line-height: 1.45;
-    }
-
-    tr:hover {
-        background: #f7f9fb;
-    }
-
-    .severity-high {
-        color: #b42318;
+    .high {
         font-weight: bold;
     }
 
-    .severity-medium {
-        color: #a15c00;
+    .medium {
         font-weight: bold;
     }
 
-    .severity-low {
-        color: #287a3e;
-        font-weight: bold;
-    }
-
-    .issue-technical {
-        font-weight: bold;
+    .low {
+        font-weight: normal;
     }
 
     .small {
@@ -226,58 +180,32 @@
         color: #666;
     }
 
-    .progress-container {
-        width: 100%;
-        height: 12px;
-        background: #e1e5e9;
-        border-radius: 10px;
-        overflow: hidden;
+    .finding-count {
+        font-size: 20px;
+        font-weight: bold;
         margin-top: 10px;
     }
 
-    #progressBar {
-        height: 100%;
-        width: 0%;
-        background: #287a3e;
-        transition: width 0.3s;
+    details {
+        margin-top: 10px;
     }
 
-    .file-list {
-        margin-top: 12px;
-    }
-
-    .file-item {
-        padding: 7px 10px;
-        background: #f5f6f7;
-        margin-bottom: 5px;
-        border-radius: 5px;
-    }
-
-    .instructions {
-        background: #fff8e6;
-        border-left: 4px solid #e6a700;
-        padding: 14px;
-        margin-top: 15px;
-        line-height: 1.5;
-    }
-
-    .ollama-ok {
-        color: #287a3e;
+    summary {
+        cursor: pointer;
         font-weight: bold;
     }
 
-    .ollama-error {
-        color: #b42318;
-        font-weight: bold;
+    #resultsCard {
+        display: none;
     }
 
-    @media (max-width: 900px) {
-        .grid {
-            grid-template-columns: 1fr;
+    @media(max-width:700px) {
+        .button-row {
+            flex-direction: column;
         }
 
-        .stats {
-            grid-template-columns: repeat(2, 1fr);
+        .button-row button {
+            width: 100%;
         }
     }
 </style>
@@ -286,195 +214,153 @@
 <body>
 
 <header>
-    <h1>AI Transcript Auditor</h1>
-    <p>Technical, grammar, terminology, content-gap and outdated-content analysis using local Ollama</p>
+    <h1>Transcript Audit with Ollama</h1>
+    <p>Local AI-powered technical, terminology, content-gap, grammar and outdated-content review</p>
 </header>
 
 <div class="container">
 
     <div class="card">
 
-        <h2>1. Audit Configuration</h2>
+        <h2>Configuration</h2>
 
         <div class="grid">
 
-            <div class="field">
-                <label>Ollama URL</label>
+            <div>
+                <label for="ollamaUrl">Ollama URL</label>
                 <input
                     id="ollamaUrl"
                     value="http://localhost:11434"
-                    placeholder="http://localhost:11434">
+                    type="text">
             </div>
 
-            <div class="field">
-                <label>Ollama Model</label>
+            <div>
+                <label for="model">Ollama Model</label>
                 <input
                     id="model"
                     value="qwen3:1.7b"
-                    placeholder="qwen3:1.7b">
+                    type="text">
             </div>
 
-            <div class="field">
-                <label>Course / Domain</label>
+            <div>
+                <label for="course">Course / Domain</label>
                 <input
-                    id="domain"
-                    value="General Technical Course"
-                    placeholder="Example: BABOK v3 Business Analysis">
+                    id="course"
+                    placeholder="Example: Generative AI">
             </div>
 
-            <div class="field">
-                <label>Chunk Size</label>
-                <select id="chunkSize">
-                    <option value="8000">8,000 characters</option>
-                    <option value="12000" selected>12,000 characters</option>
-                    <option value="16000">16,000 characters</option>
-                    <option value="20000">20,000 characters</option>
-                </select>
+            <div>
+                <label for="chunkSize">Chunk Size</label>
+                <input
+                    id="chunkSize"
+                    type="number"
+                    value="5000"
+                    min="1000"
+                    max="12000">
             </div>
 
         </div>
 
-        <div class="buttons">
+        <div class="button-row">
 
             <button
-                class="secondary"
+                id="testButton"
                 onclick="testOllama()">
                 Test Ollama
             </button>
 
             <button
-                class="primary"
                 id="auditButton"
+                class="success"
                 onclick="startAudit()">
                 Start Audit
             </button>
 
             <button
-                class="success"
-                id="exportButton"
-                onclick="exportExcel()"
-                disabled>
+                class="secondary"
+                onclick="clearResults()">
+                Clear
+            </button>
+
+            <button
+                class="warning"
+                onclick="exportExcel()">
                 Export Excel
             </button>
 
         </div>
 
-        <div id="ollamaStatus"></div>
+        <div id="status"></div>
+
+        <div id="progress" class="progress">
+
+            <div id="progressText">
+                Preparing...
+            </div>
+
+            <div class="progress-bar">
+                <div
+                    id="progressFill"
+                    class="progress-fill">
+                </div>
+            </div>
+
+        </div>
 
     </div>
 
 
     <div class="card">
 
-        <h2>2. Upload Transcript</h2>
+        <h2>Transcript Files</h2>
 
         <input
+            id="files"
             type="file"
-            id="transcriptFiles"
             multiple
-            accept=".srt,.vtt,.txt,.md">
+            accept=".txt,.srt,.vtt,.md">
 
-        <div class="small">
-            Supported: SRT, VTT, TXT and Markdown.
-            You can select multiple transcripts.
-        </div>
+        <p class="small">
+            Supported formats: TXT, SRT, VTT and Markdown.
+        </p>
 
-        <div id="fileList" class="file-list"></div>
-
-        <div class="instructions">
-
-            <strong>Audit categories:</strong>
-
-            <ul>
-                <li>Technical Error</li>
-                <li>Terminology Inconsistency</li>
-                <li>Content Gap</li>
-                <li>Grammar</li>
-                <li>Outdated Content</li>
-            </ul>
-
-            Every finding includes an <strong>issue description</strong>,
-            evidence/quote, severity and suggested fix.
-
-        </div>
+        <div id="fileList"></div>
 
     </div>
 
 
-    <div class="card">
+    <div id="resultsCard" class="card">
 
-        <h2>3. Audit Progress</h2>
+        <h2>Audit Results</h2>
 
-        <div id="status">
-            Ready.
+        <div id="findingCount" class="finding-count">
+            0 findings
         </div>
 
-        <div class="progress-container">
-            <div id="progressBar"></div>
-        </div>
+        <div style="overflow-x:auto">
 
-    </div>
+            <table id="resultsTable">
 
+                <thead>
 
-    <div id="resultsSection" style="display:none;">
-
-        <div class="stats">
-
-            <div class="stat">
-                <div id="totalFiles" class="stat-number">0</div>
-                <div class="stat-label">Files</div>
-            </div>
-
-            <div class="stat">
-                <div id="totalChunks" class="stat-number">0</div>
-                <div class="stat-label">Chunks</div>
-            </div>
-
-            <div class="stat">
-                <div id="totalIssues" class="stat-number">0</div>
-                <div class="stat-label">Issues</div>
-            </div>
-
-            <div class="stat">
-                <div id="highIssues" class="stat-number">0</div>
-                <div class="stat-label">High</div>
-            </div>
-
-            <div class="stat">
-                <div id="mediumIssues" class="stat-number">0</div>
-                <div class="stat-label">Medium</div>
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <h2>Audit Findings</h2>
-
-            <div class="table-wrapper">
-
-                <table id="resultsTable">
-
-                    <thead>
                     <tr>
+                        <th>#</th>
                         <th>File</th>
                         <th>Timestamp</th>
                         <th>Issue Type</th>
                         <th>Severity</th>
-                        <th>Quote / Evidence</th>
-                        <th>Issue Description</th>
+                        <th>Quote</th>
+                        <th>Description</th>
                         <th>Suggested Fix</th>
                         <th>Key Terms</th>
                         <th>Topics Covered</th>
                     </tr>
-                    </thead>
 
-                    <tbody></tbody>
+                </thead>
 
-                </table>
+                <tbody id="resultsBody"></tbody>
 
-            </div>
+            </table>
 
         </div>
 
@@ -487,325 +373,581 @@
 
 let allFindings = [];
 let auditFiles = [];
-let totalChunksProcessed = 0;
+
+const DEFAULT_TIMEOUT = 120000;
 
 
 /* ---------------------------------------------------------
-   FILE DISPLAY
+   Utility
 --------------------------------------------------------- */
 
-document
-    .getElementById("transcriptFiles")
-    .addEventListener("change", function() {
+function getOllamaUrl() {
 
-        auditFiles = Array.from(this.files);
+    let url = document
+        .getElementById("ollamaUrl")
+        .value
+        .trim();
 
-        const container =
-            document.getElementById("fileList");
-
-        container.innerHTML = "";
-
-        auditFiles.forEach(file => {
-
-            const div =
-                document.createElement("div");
-
-            div.className = "file-item";
-
-            div.textContent =
-                `${file.name} (${formatBytes(file.size)})`;
-
-            container.appendChild(div);
-
-        });
-
-    });
-
-
-function formatBytes(bytes) {
-
-    if (bytes === 0) return "0 Bytes";
-
-    const units = [
-        "Bytes",
-        "KB",
-        "MB",
-        "GB"
-    ];
-
-    const i =
-        Math.floor(
-            Math.log(bytes) /
-            Math.log(1024)
-        );
-
-    return (
-        Math.round(
-            bytes /
-            Math.pow(1024, i) *
-            100
-        ) / 100
-    ) + " " + units[i];
-
+    return url.replace(/\/+$/, "");
 }
 
 
-/* ---------------------------------------------------------
-   OLLAMA TEST
---------------------------------------------------------- */
+function getModel() {
 
-async function testOllama() {
-
-    const url =
-        document
-            .getElementById("ollamaUrl")
-            .value
-            .replace(/\/$/, "");
-
-    const model =
-        document
-            .getElementById("model")
-            .value;
-
-    const status =
-        document.getElementById("ollamaStatus");
-
-    status.className = "";
-    status.textContent = "Testing Ollama...";
-
-    try {
-
-        const response =
-            await fetch(
-                `${url}/api/generate`,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-                        model: model,
-                        prompt:
-                            "Reply with exactly: OLLAMA_OK",
-                        stream: false,
-                        options: {
-                            temperature: 0
-                        }
-                    })
-                }
-            );
-
-        if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
-        }
-
-        const data =
-            await response.json();
-
-        status.className =
-            "ollama-ok";
-
-        status.textContent =
-            `✓ Ollama connected successfully. Model: ${model}`;
-
-    } catch (error) {
-
-        status.className =
-            "ollama-error";
-
-        status.innerHTML =
-            `✗ Could not connect to Ollama.<br>
-            Make sure Ollama is running with:
-            <br><br>
-            <code>ollama serve</code>
-            <br><br>
-            Error: ${escapeHtml(error.message)}`;
-
-    }
-
-}
-
-
-/* ---------------------------------------------------------
-   TRANSCRIPT PARSING
---------------------------------------------------------- */
-
-function cleanTranscript(text) {
-
-    text = text.replace(/\r/g, "");
-
-    // Remove WEBVTT header
-    text = text.replace(/^WEBVTT.*?\n/i, "");
-
-    // Remove SRT numbering
-    text = text.replace(
-        /^\s*\d+\s*$/gm,
-        ""
-    );
-
-    // Remove metadata lines
-    text = text.replace(
-        /^(NOTE|STYLE|REGION).*$/gmi,
-        ""
-    );
-
-    // Keep timestamps
-    return text
-        .replace(/\n{3,}/g, "\n\n")
+    return document
+        .getElementById("model")
+        .value
         .trim();
 
 }
 
 
+function showStatus(message, type = "info") {
+
+    const status = document.getElementById("status");
+
+    status.style.display = "block";
+
+    status.className = "";
+
+    status.classList.add(
+        type === "success"
+            ? "status-success"
+            : type === "error"
+                ? "status-error"
+                : "status-info"
+    );
+
+    status.textContent = message;
+}
+
+
+function setProgress(current, total, message) {
+
+    const progress = document.getElementById("progress");
+
+    const fill = document.getElementById("progressFill");
+
+    const text = document.getElementById("progressText");
+
+    progress.style.display = "block";
+
+    const percent =
+        total > 0
+            ? Math.round((current / total) * 100)
+            : 0;
+
+    fill.style.width = percent + "%";
+
+    text.textContent =
+        message + " (" + current + "/" + total + ")";
+}
+
+
+/* ---------------------------------------------------------
+   Fetch with timeout
+--------------------------------------------------------- */
+
+async function fetchWithTimeout(
+    url,
+    options = {},
+    timeout = DEFAULT_TIMEOUT
+) {
+
+    const controller = new AbortController();
+
+    const timer = setTimeout(
+        () => controller.abort(),
+        timeout
+    );
+
+    try {
+
+        const response = await fetch(
+            url,
+            {
+                ...options,
+                signal: controller.signal
+            }
+        );
+
+        return response;
+
+    } catch (error) {
+
+        if (error.name === "AbortError") {
+
+            throw new Error(
+                "Request timed out after " +
+                Math.round(timeout / 1000) +
+                " seconds."
+            );
+
+        }
+
+        throw error;
+
+    } finally {
+
+        clearTimeout(timer);
+
+    }
+
+}
+
+
+/* ---------------------------------------------------------
+   Test Ollama
+--------------------------------------------------------- */
+
+async function testOllama() {
+
+    const button =
+        document.getElementById("testButton");
+
+    const url = getOllamaUrl();
+
+    const model = getModel();
+
+    button.disabled = true;
+
+    button.textContent = "Checking...";
+
+    showStatus(
+        "Checking Ollama connection...",
+        "info"
+    );
+
+    try {
+
+        /*
+         * First check the Ollama server itself.
+         */
+
+        const tagsResponse =
+            await fetchWithTimeout(
+                url + "/api/tags",
+                {
+                    method: "GET",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                },
+                10000
+            );
+
+        if (!tagsResponse.ok) {
+
+            const errorText =
+                await tagsResponse.text();
+
+            throw new Error(
+                "Ollama returned HTTP " +
+                tagsResponse.status +
+                " while checking /api/tags.\n" +
+                errorText
+            );
+
+        }
+
+        const tags =
+            await tagsResponse.json();
+
+        const models =
+            tags.models || [];
+
+        const modelNames =
+            models.map(
+                m => m.name
+            );
+
+        /*
+         * Check whether requested model exists.
+         */
+
+        const modelExists =
+            modelNames.some(
+                name =>
+                    name === model ||
+                    name.startsWith(model + ":")
+            );
+
+        if (!modelExists) {
+
+            throw new Error(
+                "Ollama is running, but model '" +
+                model +
+                "' was not found.\n\n" +
+                "Available models:\n" +
+                (
+                    modelNames.length
+                        ? modelNames.join("\n")
+                        : "(none)"
+                )
+            );
+
+        }
+
+        /*
+         * Actually test generation.
+         */
+
+        const testBody = {
+
+            model: model,
+
+            prompt:
+                "Reply with exactly: OLLAMA_OK",
+
+            stream: false,
+
+            options: {
+                temperature: 0
+            }
+
+        };
+
+        const generateResponse =
+            await fetchWithTimeout(
+                url + "/api/generate",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                        "Accept":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(testBody)
+                },
+                60000
+            );
+
+        if (!generateResponse.ok) {
+
+            const errorText =
+                await generateResponse.text();
+
+            throw new Error(
+                "Ollama returned HTTP " +
+                generateResponse.status +
+                " from /api/generate.\n\n" +
+                errorText
+            );
+
+        }
+
+        const result =
+            await generateResponse.json();
+
+        showStatus(
+            "✓ Ollama connected successfully.\n" +
+            "Model: " + model + "\n" +
+            "Test response: " +
+            (result.response || "").trim(),
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        let message =
+            "✗ Could not connect to Ollama.\n\n" +
+            error.message;
+
+        if (
+            error.message.includes(
+                "Failed to fetch"
+            )
+        ) {
+
+            message +=
+                "\n\nPossible cause: browser CORS restriction.\n" +
+                "Ollama may be running correctly, but GitHub Pages " +
+                "is not currently allowed to access localhost:11434.";
+
+        }
+
+        showStatus(
+            message,
+            "error"
+        );
+
+    } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+            "Test Ollama";
+
+    }
+
+}
+
+
+/* ---------------------------------------------------------
+   File handling
+--------------------------------------------------------- */
+
+document
+    .getElementById("files")
+    .addEventListener(
+        "change",
+        function(event) {
+
+            auditFiles =
+                Array.from(
+                    event.target.files
+                );
+
+            const fileList =
+                document.getElementById(
+                    "fileList"
+                );
+
+            if (!auditFiles.length) {
+
+                fileList.innerHTML =
+                    "<p>No files selected.</p>";
+
+                return;
+
+            }
+
+            fileList.innerHTML =
+                "<p><strong>" +
+                auditFiles.length +
+                " file(s) selected:</strong></p>" +
+                "<ul>" +
+                auditFiles
+                    .map(
+                        f =>
+                            "<li>" +
+                            escapeHtml(f.name) +
+                            "</li>"
+                    )
+                    .join("") +
+                "</ul>";
+
+        }
+    );
+
+
+/* ---------------------------------------------------------
+   Transcript parsing
+--------------------------------------------------------- */
+
+function cleanTranscript(text) {
+
+    /*
+     * Remove VTT metadata.
+     */
+
+    text =
+        text.replace(
+            /^WEBVTT[\s\S]*?\n\n/,
+            ""
+        );
+
+    /*
+     * Remove SRT numbering.
+     */
+
+    text =
+        text.replace(
+            /^\s*\d+\s*$/gm,
+            ""
+        );
+
+    /*
+     * Remove timestamps.
+     */
+
+    text =
+        text.replace(
+            /\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d{3})?\s*-->\s*\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d{3})?/g,
+            ""
+        );
+
+    /*
+     * Remove VTT cue settings.
+     */
+
+    text =
+        text.replace(
+            /align:\S+|position:\S+|size:\S+|line:\S+/g,
+            ""
+        );
+
+    /*
+     * Remove excessive blank lines.
+     */
+
+    text =
+        text.replace(
+            /\n{3,}/g,
+            "\n\n"
+        );
+
+    return text.trim();
+
+}
+
+
+/* ---------------------------------------------------------
+   Timestamp extraction
+--------------------------------------------------------- */
+
 function extractTimestamp(text) {
 
     const match =
         text.match(
-            /(\d{1,2}:)?\d{2}:\d{2}[,.]\d{3}/
+            /\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d{3})?/
         );
 
-    if (!match)
-        return "";
-
-    return match[0]
-        .replace(",", ".");
+    return match
+        ? match[0]
+        : "";
 
 }
 
 
 /* ---------------------------------------------------------
-   CHUNKING
+   Chunk transcript
 --------------------------------------------------------- */
 
-function splitIntoChunks(text, size) {
+function createChunks(text, chunkSize) {
+
+    const paragraphs =
+        text
+            .split(/\n\s*\n/)
+            .map(p => p.trim())
+            .filter(Boolean);
 
     const chunks = [];
 
-    let start = 0;
+    let current = "";
 
-    while (start < text.length) {
+    for (const paragraph of paragraphs) {
 
-        let end =
-            Math.min(
-                start + size,
-                text.length
-            );
+        if (
+            current.length +
+            paragraph.length +
+            2 <=
+            chunkSize
+        ) {
 
-        // Try to end at paragraph boundary
-        if (end < text.length) {
+            current +=
+                (current ? "\n\n" : "") +
+                paragraph;
 
-            const newline =
-                text.lastIndexOf(
-                    "\n\n",
-                    end
-                );
+        } else {
 
-            if (
-                newline > start + size * 0.6
-            ) {
+            if (current) {
 
-                end = newline;
+                chunks.push(current);
 
             }
 
+            current =
+                paragraph;
+
         }
-
-        chunks.push(
-            text.substring(start, end).trim()
-        );
-
-        start = end;
 
     }
 
-    return chunks.filter(
-        x => x.length > 30
-    );
+    if (current) {
+
+        chunks.push(current);
+
+    }
+
+    return chunks;
 
 }
 
 
 /* ---------------------------------------------------------
-   AUDIT PROMPT
+   AI Prompt
 --------------------------------------------------------- */
 
-function createAuditPrompt(
+function buildPrompt(
     transcript,
-    fileName,
-    domain,
-    chunkNumber,
-    totalChunks
+    course
 ) {
 
-return `
-You are an expert educational-content QA reviewer.
+    return `
+You are an expert educational-content and technical transcript QA reviewer.
 
-You are auditing a transcript from a technical learning course.
+Course/domain:
+${course || "Not specified"}
 
-COURSE / DOMAIN:
-${domain}
+Review the following transcript carefully.
 
-FILE:
-${fileName}
+Identify only genuine issues. Do not invent errors.
 
-CHUNK:
-${chunkNumber} of ${totalChunks}
-
-Your job is to identify ONLY genuine issues.
-
-Audit these five categories:
+Review these categories:
 
 1. Technical Error
+   - Incorrect technical facts
+   - Incorrect code or commands
+   - Incorrect explanation of a technical concept
+
 2. Terminology Inconsistency
+   - Incorrect or inconsistent technical terminology
+   - Acronyms used incorrectly
+   - Same concept referred to inconsistently
+
 3. Content Gap
+   - Important information required for understanding the topic is missing
+   - Explanation is materially incomplete
+   - Prerequisite concept is missing when necessary
+
 4. Grammar
+   - Genuine grammatical errors
+   - Incorrect sentence construction
+   - Pronoun, tense, article, preposition or agreement problems
+
 5. Outdated Content
+   - Technology, library, API, product or standard information that is clearly outdated
 
-SEVERITY:
+For every genuine finding provide:
 
-High:
-A serious error that can mislead learners, produce an incorrect
-technical understanding, or materially affect course correctness.
+- timestamp
+- issue_type
+- severity
+- quote
+- description
+- suggested_fix
+- key_terms
+- topics_covered
 
-Medium:
-A meaningful issue that should be corrected but does not fundamentally
-invalidate the learning content.
+Severity:
+High = technically incorrect or materially misleading
+Medium = meaningful quality/content problem
+Low = minor grammar or terminology problem
 
-Low:
-A minor grammar, wording, consistency, or clarity issue.
-
-IMPORTANT RULES:
-
-- Do not invent problems.
+IMPORTANT:
+- Do not flag normal conversational language.
 - Do not flag stylistic preferences as errors.
-- Do not flag correct technical statements.
-- Do not create a content gap merely because additional information
-  could theoretically be added.
-- Only identify a content gap when information is genuinely necessary
-  for understanding the stated concept.
-- For outdated content, only flag information that is actually outdated
-  or likely to have changed.
-- Preserve the transcript wording in the quote.
-- Timestamp must come from the transcript whenever available.
-- Explain exactly WHY the item is an issue.
-- Provide a practical correction.
-- If there are no issues, return an empty findings array.
-
-OUTPUT FORMAT:
+- Do not invent missing context.
+- If there are no genuine issues, return an empty findings array.
+- The quote must come directly from the supplied transcript.
+- The description must clearly explain WHY the statement is wrong, incomplete, inconsistent or outdated.
+- The suggested fix should be concrete and usable by a content reviewer.
 
 Return ONLY valid JSON.
+
+Required format:
 
 {
   "findings": [
     {
-      "timestamp": "00:00:00.000",
+      "timestamp": "00:00:00",
       "issue_type": "Technical Error",
       "severity": "High",
       "quote": "exact transcript wording",
@@ -817,11 +959,7 @@ Return ONLY valid JSON.
   ]
 }
 
-Do not include Markdown.
-Do not include code fences.
-Do not include commentary.
-
-TRANSCRIPT:
+Transcript:
 
 ${transcript}
 `;
@@ -830,71 +968,162 @@ ${transcript}
 
 
 /* ---------------------------------------------------------
-   OLLAMA REQUEST
+   JSON extraction
+--------------------------------------------------------- */
+
+function parseAIResponse(text) {
+
+    if (!text) {
+
+        return {
+            findings: []
+        };
+
+    }
+
+    /*
+     * Remove markdown fences if the model adds them.
+     */
+
+    text =
+        text
+            .replace(
+                /```json/gi,
+                ""
+            )
+            .replace(
+                /```/g,
+                ""
+            )
+            .trim();
+
+    /*
+     * Find JSON object if model added explanatory text.
+     */
+
+    const firstBrace =
+        text.indexOf("{");
+
+    const lastBrace =
+        text.lastIndexOf("}");
+
+    if (
+        firstBrace >= 0 &&
+        lastBrace > firstBrace
+    ) {
+
+        text =
+            text.substring(
+                firstBrace,
+                lastBrace + 1
+            );
+
+    }
+
+    try {
+
+        const parsed =
+            JSON.parse(text);
+
+        if (
+            !parsed ||
+            !Array.isArray(
+                parsed.findings
+            )
+        ) {
+
+            return {
+                findings: []
+            };
+
+        }
+
+        return parsed;
+
+    } catch (error) {
+
+        console.error(
+            "Could not parse AI response:",
+            text
+        );
+
+        throw new Error(
+            "Ollama returned invalid JSON.\n\n" +
+            text.substring(0, 1000)
+        );
+
+    }
+
+}
+
+
+/* ---------------------------------------------------------
+   Audit one chunk
 --------------------------------------------------------- */
 
 async function auditChunk(
-    transcript,
-    fileName,
-    domain,
-    chunkNumber,
-    totalChunks
+    chunk,
+    model,
+    course
 ) {
 
-    const url =
-        document
-            .getElementById("ollamaUrl")
-            .value
-            .replace(/\/$/, "");
+    const body = {
 
-    const model =
-        document
-            .getElementById("model")
-            .value;
+        model: model,
 
-    const prompt =
-        createAuditPrompt(
-            transcript,
-            fileName,
-            domain,
-            chunkNumber,
-            totalChunks
-        );
+        prompt:
+            buildPrompt(
+                chunk,
+                course
+            ),
+
+        stream: false,
+
+        format: "json",
+
+        options: {
+
+            temperature: 0,
+
+            num_ctx: 8192
+
+        }
+
+    };
 
     const response =
-        await fetch(
-            `${url}/api/generate`,
+        await fetchWithTimeout(
+            getOllamaUrl() +
+            "/api/generate",
+
             {
                 method: "POST",
 
                 headers: {
                     "Content-Type":
+                        "application/json",
+                    "Accept":
                         "application/json"
                 },
 
-                body: JSON.stringify({
+                body:
+                    JSON.stringify(body)
 
-                    model: model,
+            },
 
-                    prompt: prompt,
-
-                    stream: false,
-
-                    format: "json",
-
-                    options: {
-                        temperature: 0,
-                        num_ctx: 16384
-                    }
-
-                })
-            }
+            180000
         );
 
     if (!response.ok) {
 
+        const errorText =
+            await response.text();
+
         throw new Error(
-            `Ollama returned HTTP ${response.status}`
+            "Ollama HTTP " +
+            response.status +
+            ":\n" +
+            errorText
         );
 
     }
@@ -902,119 +1131,47 @@ async function auditChunk(
     const data =
         await response.json();
 
-    return parseModelJSON(
-        data.response || ""
+    return parseAIResponse(
+        data.response
     );
 
 }
 
 
 /* ---------------------------------------------------------
-   JSON PARSER
---------------------------------------------------------- */
-
-function parseModelJSON(text) {
-
-    text = text.trim();
-
-    // Remove Markdown fences
-    text =
-        text.replace(
-            /^```json/i,
-            ""
-        )
-        .replace(
-            /^```/i,
-            ""
-        )
-        .replace(
-            /```$/i,
-            ""
-        )
-        .trim();
-
-    try {
-
-        return JSON.parse(text);
-
-    } catch (e) {
-
-        // Try extracting JSON object
-        const first =
-            text.indexOf("{");
-
-        const last =
-            text.lastIndexOf("}");
-
-        if (
-            first !== -1 &&
-            last !== -1 &&
-            last > first
-        ) {
-
-            const candidate =
-                text.substring(
-                    first,
-                    last + 1
-                );
-
-            try {
-
-                return JSON.parse(
-                    candidate
-                );
-
-            } catch (e2) {
-
-                console.warn(
-                    "Could not parse model response",
-                    text
-                );
-
-            }
-
-        }
-
-    }
-
-    return {
-        findings: []
-    };
-
-}
-
-
-/* ---------------------------------------------------------
-   MAIN AUDIT
+   Start audit
 --------------------------------------------------------- */
 
 async function startAudit() {
 
-    const files =
-        Array.from(
-            document
-                .getElementById(
-                    "transcriptFiles"
-                )
-                .files
-        );
+    if (!auditFiles.length) {
 
-    if (!files.length) {
-
-        alert(
-            "Please upload at least one transcript."
+        showStatus(
+            "Please select at least one transcript file.",
+            "error"
         );
 
         return;
 
     }
 
-    allFindings = [];
-    totalChunksProcessed = 0;
+    const model =
+        getModel();
 
-    const domain =
+    if (!model) {
+
+        showStatus(
+            "Please enter an Ollama model.",
+            "error"
+        );
+
+        return;
+
+    }
+
+    const course =
         document
-            .getElementById("domain")
+            .getElementById("course")
             .value
             .trim();
 
@@ -1023,220 +1180,204 @@ async function startAudit() {
             document
                 .getElementById("chunkSize")
                 .value
-        );
+        ) || 5000;
 
     const auditButton =
-        document
-            .getElementById(
-                "auditButton"
-            );
+        document.getElementById(
+            "auditButton"
+        );
 
     auditButton.disabled = true;
 
-    document
-        .getElementById(
-            "exportButton"
-        )
-        .disabled = true;
+    allFindings = [];
 
-    document
-        .getElementById(
-            "resultsSection"
-        )
-        .style.display = "none";
+    clearResults(false);
 
     try {
 
         /*
-         * First test Ollama.
+         * Verify Ollama before processing files.
          */
 
-        setStatus(
-            "Checking Ollama connection..."
+        showStatus(
+            "Checking Ollama before starting the audit...",
+            "info"
         );
 
-        await testOllamaInternal();
+        const tagsResponse =
+            await fetchWithTimeout(
+                getOllamaUrl() +
+                "/api/tags",
+                {},
+                10000
+            );
+
+        if (!tagsResponse.ok) {
+
+            throw new Error(
+                "Ollama returned HTTP " +
+                tagsResponse.status
+            );
+
+        }
+
+        const tags =
+            await tagsResponse.json();
+
+        const modelNames =
+            (tags.models || [])
+                .map(m => m.name);
+
+        const modelExists =
+            modelNames.some(
+                name =>
+                    name === model ||
+                    name.startsWith(
+                        model + ":"
+                    )
+            );
+
+        if (!modelExists) {
+
+            throw new Error(
+                "Model '" +
+                model +
+                "' is not available in Ollama.\n\n" +
+                "Available models:\n" +
+                modelNames.join("\n")
+            );
+
+        }
 
 
         /*
-         * Read all files.
+         * Read files.
          */
 
-        const documents = [];
+        const preparedFiles = [];
 
         for (
-            let i = 0;
-            i < files.length;
-            i++
+            const file of auditFiles
         ) {
 
-            setStatus(
-                `Reading file ${i + 1} of ${files.length}: ${files[i].name}`
-            );
-
-            const raw =
-                await readFile(
-                    files[i]
-                );
+            const text =
+                await file.text();
 
             const cleaned =
-                cleanTranscript(raw);
-
-            if (cleaned.length < 20)
-                continue;
+                cleanTranscript(text);
 
             const chunks =
-                splitIntoChunks(
+                createChunks(
                     cleaned,
                     chunkSize
                 );
 
-            documents.push({
-
-                fileName:
-                    files[i].name,
-
-                text:
-                    cleaned,
-
-                chunks:
-                    chunks
-
+            preparedFiles.push({
+                name: file.name,
+                chunks: chunks
             });
 
         }
 
 
-        const totalChunks =
-            documents.reduce(
-                (sum, doc) =>
-                    sum + doc.chunks.length,
-                0
-            );
+        let totalChunks = 0;
 
-        if (!totalChunks) {
+        preparedFiles.forEach(
+            file => {
+                totalChunks +=
+                    file.chunks.length;
+            }
+        );
 
-            throw new Error(
-                "No usable transcript text was found."
-            );
 
-        }
+        let completedChunks = 0;
 
 
         /*
-         * Audit each chunk sequentially.
+         * Process sequentially.
          *
-         * Sequential requests are intentional:
-         * local Ollama models can become very slow
-         * if many large requests are sent simultaneously.
+         * This is deliberate because
+         * qwen3:1.7b is running on CPU
+         * and parallel requests could
+         * exhaust memory.
          */
 
         for (
-            const doc of documents
+            const file of preparedFiles
         ) {
 
             for (
-                let c = 0;
-                c < doc.chunks.length;
-                c++
+                let i = 0;
+                i < file.chunks.length;
+                i++
             ) {
 
-                totalChunksProcessed++;
+                completedChunks++;
 
                 setProgress(
-                    totalChunksProcessed,
-                    totalChunks
+                    completedChunks,
+                    totalChunks,
+                    "Auditing " +
+                    file.name +
+                    " — chunk " +
+                    (i + 1)
                 );
 
-                setStatus(
-                    `Auditing ${doc.fileName}
-Chunk ${c + 1} of ${doc.chunks.length}
-Overall progress: ${totalChunksProcessed} / ${totalChunks}`
+                showStatus(
+                    "Auditing " +
+                    file.name +
+                    "\nChunk " +
+                    (i + 1) +
+                    " of " +
+                    file.chunks.length +
+                    "\n\nUsing local model: " +
+                    model,
+                    "info"
                 );
-
-                let result;
 
                 try {
 
-                    result =
+                    const result =
                         await auditChunk(
-                            doc.chunks[c],
-                            doc.fileName,
-                            domain,
-                            c + 1,
-                            doc.chunks.length
+                            file.chunks[i],
+                            model,
+                            course
                         );
 
-                } catch (error) {
+                    const findings =
+                        result.findings || [];
 
-                    console.error(
-                        error
-                    );
-
-                    setStatus(
-                        `Warning: Could not process ${doc.fileName}, chunk ${c + 1}.
-${error.message}
-
-Continuing with the remaining chunks...`
-                    );
-
-                    continue;
-
-                }
-
-
-                if (
-                    result &&
-                    Array.isArray(
-                        result.findings
-                    )
-                ) {
-
-                    result.findings.forEach(
+                    findings.forEach(
                         finding => {
 
                             finding.file =
-                                doc.fileName;
+                                file.name;
 
-                            finding.timestamp =
-                                finding.timestamp ||
-                                extractTimestamp(
-                                    doc.chunks[c]
-                                );
+                            /*
+                             * Ensure arrays exist.
+                             */
 
-                            finding.issue_type =
-                                finding.issue_type ||
-                                "Unclassified";
-
-                            finding.severity =
-                                finding.severity ||
-                                "Medium";
-
-                            finding.quote =
-                                finding.quote ||
-                                "";
-
-                            finding.description =
-                                finding.description ||
-                                "";
-
-                            finding.suggested_fix =
-                                finding.suggested_fix ||
-                                "";
-
-                            finding.key_terms =
-                                Array.isArray(
+                            if (
+                                !Array.isArray(
                                     finding.key_terms
                                 )
-                                ? finding.key_terms
-                                : [];
+                            ) {
 
-                            finding.topics_covered =
-                                Array.isArray(
+                                finding.key_terms =
+                                    [];
+
+                            }
+
+                            if (
+                                !Array.isArray(
                                     finding.topics_covered
                                 )
-                                ? finding.topics_covered
-                                : [];
+                            ) {
+
+                                finding.topics_covered =
+                                    [];
+
+                            }
 
                             allFindings.push(
                                 finding
@@ -1245,9 +1386,30 @@ Continuing with the remaining chunks...`
                         }
                     );
 
-                }
+                    renderResults();
 
-                renderResults();
+                } catch (error) {
+
+                    console.error(
+                        error
+                    );
+
+                    showStatus(
+                        "Error auditing " +
+                        file.name +
+                        ", chunk " +
+                        (i + 1) +
+                        ":\n\n" +
+                        error.message,
+                        "error"
+                    );
+
+                    /*
+                     * Continue with next chunk
+                     * instead of losing the whole audit.
+                     */
+
+                }
 
             }
 
@@ -1255,11 +1417,11 @@ Continuing with the remaining chunks...`
 
 
         /*
-         * Remove obvious duplicate findings.
+         * Remove duplicates.
          */
 
         allFindings =
-            deduplicateFindings(
+            removeDuplicates(
                 allFindings
             );
 
@@ -1267,36 +1429,35 @@ Continuing with the remaining chunks...`
 
         setProgress(
             totalChunks,
-            totalChunks
+            totalChunks,
+            "Audit complete"
         );
 
-        setStatus(
-            `Audit completed.
-
-Files: ${documents.length}
-Chunks: ${totalChunks}
-Issues found: ${allFindings.length}`
+        showStatus(
+            "✓ Audit completed successfully.\n\n" +
+            "Files: " +
+            preparedFiles.length +
+            "\nChunks processed: " +
+            totalChunks +
+            "\nFindings: " +
+            allFindings.length,
+            "success"
         );
-
-        document
-            .getElementById(
-                "exportButton"
-            )
-            .disabled =
-                allFindings.length === 0;
 
     } catch (error) {
 
         console.error(error);
 
-        setStatus(
-            `Audit failed:
-${error.message}`
+        showStatus(
+            "✗ Audit failed.\n\n" +
+            error.message,
+            "error"
         );
 
     } finally {
 
-        auditButton.disabled = false;
+        auditButton.disabled =
+            false;
 
     }
 
@@ -1304,275 +1465,10 @@ ${error.message}`
 
 
 /* ---------------------------------------------------------
-   INTERNAL OLLAMA TEST
+   Remove duplicates
 --------------------------------------------------------- */
 
-async function testOllamaInternal() {
-
-    const url =
-        document
-            .getElementById("ollamaUrl")
-            .value
-            .replace(/\/$/, "");
-
-    const model =
-        document
-            .getElementById("model")
-            .value;
-
-    const response =
-        await fetch(
-            `${url}/api/generate`,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body: JSON.stringify({
-
-                    model: model,
-
-                    prompt:
-                        "Reply with exactly OLLAMA_OK",
-
-                    stream: false,
-
-                    options: {
-                        temperature: 0
-                    }
-
-                })
-
-            }
-        );
-
-    if (!response.ok) {
-
-        throw new Error(
-            `Cannot connect to Ollama. HTTP ${response.status}`
-        );
-
-    }
-
-}
-
-
-/* ---------------------------------------------------------
-   FILE READER
---------------------------------------------------------- */
-
-function readFile(file) {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            const reader =
-                new FileReader();
-
-            reader.onload =
-                () => resolve(
-                    reader.result
-                );
-
-            reader.onerror =
-                () => reject(
-                    reader.error
-                );
-
-            reader.readAsText(
-                file
-            );
-
-        }
-    );
-
-}
-
-
-/* ---------------------------------------------------------
-   RESULTS TABLE
---------------------------------------------------------- */
-
-function renderResults() {
-
-    const section =
-        document
-            .getElementById(
-                "resultsSection"
-            );
-
-    section.style.display =
-        "block";
-
-    const tbody =
-        document.querySelector(
-            "#resultsTable tbody"
-        );
-
-    tbody.innerHTML = "";
-
-    allFindings.forEach(
-        finding => {
-
-            const row =
-                document.createElement(
-                    "tr"
-                );
-
-            const severity =
-                String(
-                    finding.severity
-                ).toLowerCase();
-
-            row.innerHTML = `
-
-                <td>
-                    ${escapeHtml(
-                        finding.file
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        finding.timestamp
-                    )}
-                </td>
-
-                <td class="issue-${severity}">
-                    ${escapeHtml(
-                        finding.issue_type
-                    )}
-                </td>
-
-                <td>
-                    <span class="severity-${severity}">
-                        ${escapeHtml(
-                            finding.severity
-                        )}
-                    </span>
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        finding.quote
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        finding.description
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        finding.suggested_fix
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        finding.key_terms.join(
-                            ", "
-                        )
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        finding.topics_covered.join(
-                            ", "
-                        )
-                    )}
-                </td>
-
-            `;
-
-            tbody.appendChild(row);
-
-        }
-    );
-
-
-    updateStats();
-
-}
-
-
-/* ---------------------------------------------------------
-   STATISTICS
---------------------------------------------------------- */
-
-function updateStats() {
-
-    const high =
-        allFindings.filter(
-            x =>
-                String(
-                    x.severity
-                ).toLowerCase() === "high"
-        ).length;
-
-    const medium =
-        allFindings.filter(
-            x =>
-                String(
-                    x.severity
-                ).toLowerCase() === "medium"
-        ).length;
-
-    document
-        .getElementById(
-            "totalFiles"
-        )
-        .textContent =
-            new Set(
-                allFindings.map(
-                    x => x.file
-                )
-            ).size;
-
-    document
-        .getElementById(
-            "totalChunks"
-        )
-        .textContent =
-            totalChunksProcessed;
-
-    document
-        .getElementById(
-            "totalIssues"
-        )
-        .textContent =
-            allFindings.length;
-
-    document
-        .getElementById(
-            "highIssues"
-        )
-        .textContent =
-            high;
-
-    document
-        .getElementById(
-            "mediumIssues"
-        )
-        .textContent =
-            medium;
-
-}
-
-
-/* ---------------------------------------------------------
-   DUPLICATE REMOVAL
---------------------------------------------------------- */
-
-function deduplicateFindings(
-    findings
-) {
+function removeDuplicates(findings) {
 
     const seen =
         new Set();
@@ -1587,12 +1483,10 @@ function deduplicateFindings(
                     finding.issue_type,
                     finding.quote
                 ]
-                .join("|")
-                .toLowerCase();
+                    .join("|")
+                    .toLowerCase();
 
-            if (
-                seen.has(key)
-            ) {
+            if (seen.has(key)) {
 
                 return false;
 
@@ -1609,315 +1503,128 @@ function deduplicateFindings(
 
 
 /* ---------------------------------------------------------
-   EXCEL EXPORT
+   Render results
 --------------------------------------------------------- */
 
-function exportExcel() {
+function renderResults() {
 
-    if (!allFindings.length) {
-
-        alert(
-            "There are no findings to export."
+    const card =
+        document.getElementById(
+            "resultsCard"
         );
 
-        return;
-
-    }
-
-    const rows =
-        allFindings.map(
-            finding => ({
-
-                File:
-                    finding.file,
-
-                Timestamp:
-                    finding.timestamp,
-
-                "Issue Type":
-                    finding.issue_type,
-
-                Severity:
-                    finding.severity,
-
-                "Quote / Evidence":
-                    finding.quote,
-
-                "Issue Description":
-                    finding.description,
-
-                "Suggested Fix":
-                    finding.suggested_fix,
-
-                "Key Terms":
-                    finding.key_terms.join(
-                        ", "
-                    ),
-
-                "Topics Covered":
-                    finding.topics_covered.join(
-                        ", "
-                    )
-
-            })
+    const body =
+        document.getElementById(
+            "resultsBody"
         );
 
-
-    const workbook =
-        XLSX.utils.book_new();
-
-
-    /*
-     * Findings sheet
-     */
-
-    const findingsSheet =
-        XLSX.utils.json_to_sheet(
-            rows
+    const count =
+        document.getElementById(
+            "findingCount"
         );
 
-    XLSX.utils.book_append_sheet(
-        workbook,
-        findingsSheet,
-        "Findings"
-    );
+    card.style.display =
+        "block";
 
+    count.textContent =
+        allFindings.length +
+        (
+            allFindings.length === 1
+                ? " finding"
+                : " findings"
+        );
 
-    /*
-     * Summary sheet
-     */
+    body.innerHTML = "";
 
-    const summaryRows = [
+    allFindings.forEach(
+        (finding, index) => {
 
-        {
-            Metric:
-                "Total Findings",
+            const row =
+                document.createElement(
+                    "tr"
+                );
 
-            Count:
-                allFindings.length
-        },
+            row.innerHTML =
 
-        {
-            Metric:
-                "High",
+                "<td>" +
+                (index + 1) +
+                "</td>" +
 
-            Count:
-                allFindings.filter(
-                    x =>
-                        x.severity === "High"
-                ).length
-        },
+                "<td>" +
+                escapeHtml(
+                    finding.file || ""
+                ) +
+                "</td>" +
 
-        {
-            Metric:
-                "Medium",
+                "<td>" +
+                escapeHtml(
+                    finding.timestamp || ""
+                ) +
+                "</td>" +
 
-            Count:
-                allFindings.filter(
-                    x =>
-                        x.severity === "Medium"
-                ).length
-        },
+                "<td>" +
+                escapeHtml(
+                    finding.issue_type || ""
+                ) +
+                "</td>" +
 
-        {
-            Metric:
-                "Low",
+                "<td class='" +
+                String(
+                    finding.severity || ""
+                ).toLowerCase() +
+                "'>" +
+                escapeHtml(
+                    finding.severity || ""
+                ) +
+                "</td>" +
 
-            Count:
-                allFindings.filter(
-                    x =>
-                        x.severity === "Low"
-                ).length
-        },
+                "<td>" +
+                escapeHtml(
+                    finding.quote || ""
+                ) +
+                "</td>" +
 
-        {
-            Metric:
-                "Technical Error",
+                "<td>" +
+                escapeHtml(
+                    finding.description || ""
+                ) +
+                "</td>" +
 
-            Count:
-                countType(
-                    "Technical Error"
-                )
-        },
+                "<td>" +
+                escapeHtml(
+                    finding.suggested_fix || ""
+                ) +
+                "</td>" +
 
-        {
-            Metric:
-                "Terminology Inconsistency",
+                "<td>" +
+                escapeHtml(
+                    (
+                        finding.key_terms || []
+                    ).join(", ")
+                ) +
+                "</td>" +
 
-            Count:
-                countType(
-                    "Terminology Inconsistency"
-                )
-        },
+                "<td>" +
+                escapeHtml(
+                    (
+                        finding.topics_covered || []
+                    ).join(", ")
+                ) +
+                "</td>";
 
-        {
-            Metric:
-                "Content Gap",
+            body.appendChild(row);
 
-            Count:
-                countType(
-                    "Content Gap"
-                )
-        },
-
-        {
-            Metric:
-                "Grammar",
-
-            Count:
-                countType(
-                    "Grammar"
-                )
-        },
-
-        {
-            Metric:
-                "Outdated Content",
-
-            Count:
-                countType(
-                    "Outdated Content"
-                )
         }
-
-    ];
-
-
-    const summarySheet =
-        XLSX.utils.json_to_sheet(
-            summaryRows
-        );
-
-    XLSX.utils.book_append_sheet(
-        workbook,
-        summarySheet,
-        "Summary"
     );
-
-
-    /*
-     * File status
-     */
-
-    const fileRows =
-        Array.from(
-            new Set(
-                allFindings.map(
-                    x => x.file
-                )
-            )
-        )
-        .map(
-            file => ({
-
-                File:
-                    file,
-
-                Findings:
-                    allFindings.filter(
-                        x =>
-                            x.file === file
-                    ).length
-
-            })
-        );
-
-
-    const fileSheet =
-        XLSX.utils.json_to_sheet(
-            fileRows
-        );
-
-    XLSX.utils.book_append_sheet(
-        workbook,
-        fileSheet,
-        "File Status"
-    );
-
-
-    /*
-     * Download
-     */
-
-    const date =
-        new Date()
-            .toISOString()
-            .slice(
-                0,
-                10
-            );
-
-    XLSX.writeFile(
-        workbook,
-        `Transcript_Audit_${date}.xlsx`
-    );
-
-}
-
-
-function countType(type) {
-
-    return allFindings.filter(
-        x =>
-            String(
-                x.issue_type
-            ).toLowerCase() ===
-            type.toLowerCase()
-    ).length;
 
 }
 
 
 /* ---------------------------------------------------------
-   UI HELPERS
+   Escape HTML
 --------------------------------------------------------- */
 
-function setStatus(message) {
-
-    document
-        .getElementById(
-            "status"
-        )
-        .textContent =
-            message;
-
-}
-
-
-function setProgress(
-    current,
-    total
-) {
-
-    const percent =
-        total === 0
-        ? 0
-        : Math.round(
-            current /
-            total *
-            100
-        );
-
-    document
-        .getElementById(
-            "progressBar"
-        )
-        .style.width =
-            `${percent}%`;
-
-}
-
-
 function escapeHtml(value) {
-
-    if (
-        value === null ||
-        value === undefined
-    ) {
-
-        return "";
-
-    }
 
     return String(value)
         .replace(
@@ -1942,6 +1649,285 @@ function escapeHtml(value) {
         );
 
 }
+
+
+/* ---------------------------------------------------------
+   Clear
+--------------------------------------------------------- */
+
+function clearResults(
+    resetFiles = true
+) {
+
+    allFindings = [];
+
+    document
+        .getElementById(
+            "resultsBody"
+        )
+        .innerHTML = "";
+
+    document
+        .getElementById(
+            "findingCount"
+        )
+        .textContent =
+            "0 findings";
+
+    document
+        .getElementById(
+            "resultsCard"
+        )
+        .style.display =
+            "none";
+
+    if (resetFiles) {
+
+        auditFiles = [];
+
+        document
+            .getElementById(
+                "files"
+            )
+            .value = "";
+
+        document
+            .getElementById(
+                "fileList"
+            )
+            .innerHTML = "";
+
+    }
+
+}
+
+
+/* ---------------------------------------------------------
+   Excel export
+--------------------------------------------------------- */
+
+function exportExcel() {
+
+    if (!allFindings.length) {
+
+        showStatus(
+            "There are no findings to export.",
+            "error"
+        );
+
+        return;
+
+    }
+
+    const rows =
+        allFindings.map(
+            (finding, index) => ({
+
+                "#":
+                    index + 1,
+
+                "File":
+                    finding.file || "",
+
+                "Timestamp":
+                    finding.timestamp || "",
+
+                "Issue Type":
+                    finding.issue_type || "",
+
+                "Severity":
+                    finding.severity || "",
+
+                "Quote":
+                    finding.quote || "",
+
+                "Description":
+                    finding.description || "",
+
+                "Suggested Fix":
+                    finding.suggested_fix || "",
+
+                "Key Terms":
+                    (
+                        finding.key_terms || []
+                    ).join(", "),
+
+                "Topics Covered":
+                    (
+                        finding.topics_covered || []
+                    ).join(", ")
+
+            })
+        );
+
+
+    const findingsSheet =
+        XLSX.utils.json_to_sheet(
+            rows
+        );
+
+
+    /*
+     * Summary
+     */
+
+    const summary = {};
+
+    allFindings.forEach(
+        finding => {
+
+            const type =
+                finding.issue_type ||
+                "Unknown";
+
+            const severity =
+                finding.severity ||
+                "Unknown";
+
+            if (!summary[type]) {
+
+                summary[type] = {
+                    count: 0,
+                    High: 0,
+                    Medium: 0,
+                    Low: 0
+                };
+
+            }
+
+            summary[type].count++;
+
+            if (
+                summary[type][severity] !==
+                undefined
+            ) {
+
+                summary[type][severity]++;
+
+            }
+
+        }
+    );
+
+
+    const summaryRows =
+        Object.entries(summary)
+            .map(
+                ([type, data]) => ({
+
+                    "Issue Type":
+                        type,
+
+                    "Total":
+                        data.count,
+
+                    "High":
+                        data.High,
+
+                    "Medium":
+                        data.Medium,
+
+                    "Low":
+                        data.Low
+
+                })
+            );
+
+
+    const summarySheet =
+        XLSX.utils.json_to_sheet(
+            summaryRows
+        );
+
+
+    /*
+     * File status
+     */
+
+    const fileStatus = {};
+
+    allFindings.forEach(
+        finding => {
+
+            const file =
+                finding.file ||
+                "Unknown";
+
+            if (!fileStatus[file]) {
+
+                fileStatus[file] = 0;
+
+            }
+
+            fileStatus[file]++;
+
+        }
+    );
+
+
+    const fileRows =
+        Object.entries(fileStatus)
+            .map(
+                ([file, count]) => ({
+
+                    "File":
+                        file,
+
+                    "Findings":
+                        count
+
+                })
+            );
+
+
+    const fileSheet =
+        XLSX.utils.json_to_sheet(
+            fileRows
+        );
+
+
+    /*
+     * Workbook
+     */
+
+    const workbook =
+        XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        findingsSheet,
+        "Findings"
+    );
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        summarySheet,
+        "Summary"
+    );
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        fileSheet,
+        "File Status"
+    );
+
+
+    XLSX.writeFile(
+        workbook,
+        "Transcript_Audit_Results.xlsx"
+    );
+
+}
+
+
+/* ---------------------------------------------------------
+   Initial message
+--------------------------------------------------------- */
+
+showStatus(
+    "Ready. Make sure Ollama is running locally with qwen3:1.7b, then click Test Ollama.",
+    "info"
+);
 
 </script>
 
